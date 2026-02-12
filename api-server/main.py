@@ -93,10 +93,11 @@ async def load_features(
 
     try:
         conn = psycopg2.connect(
-            dbname="cosc471_project",
-            user="dw_user",
-            password="letmein",
-            host="localhost"
+            dbname=os.getenv("DB_NAME", "cosc471_project"),
+            user=os.getenv("DB_USER", "dw_user"),
+            password=os.getenv("DB_PASSWORD", "letmein"),
+            host=os.getenv("DB_HOST", "localhost"),
+            port=os.getenv("DB_PORT", 5432)
         )
         cur = conn.cursor()
 

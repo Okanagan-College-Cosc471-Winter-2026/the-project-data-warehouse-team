@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 import os
 import datetime
 import json
+import logging
 
+# Configure basic logging (helps debug TEST_MODE in CI)
+logging.basicConfig(level=logging.INFO)
 
 # Load environment variables
 load_dotenv()
@@ -79,7 +82,6 @@ async def test_load(_: str = Depends(verify_api_key)):
         "message": "Test load endpoint reached - API key verified"
     }
 
-
 @app.post("/v1/load/features")
 async def load_features(
     records: List[FeatureRecord],
@@ -87,8 +89,12 @@ async def load_features(
 ):
     if not records:
         raise HTTPException(status_code=400, detail="No records provided")
-    
+
+    # Debug log to confirm TEST_MODE value in CI
+    logging.info(f"TEST_MODE environment variable: {os.getenv('TEST_MODE')}")
+
     if os.getenv("TEST_MODE") == "1":  # CI test mode: mock response without DB
+        logging.info("Entering CI test mode - returning mock responses")
         inserted_count = len(records)  # Mock full insertion
         rejects = []  # Mock no rejects
         for idx, record in enumerate(records):
@@ -107,8 +113,8 @@ async def load_features(
             "rejects": rejects if rejects else None
         }
         return response
-    
-    # Normal mode: DB connection and insertion (unchanged)
+
+    # Normal mode: real DB connection and insertion
     conn = None
     inserted_count = 0
     rejects = []

@@ -39,14 +39,20 @@ jobs:
         pip install -r api-server/requirements.txt
 
     - name: Start FastAPI server
+      env:
+        TEST_MODE: 1                     # Set here so the background uvicorn inherits it
       run: |
         cd api-server
         nohup uvicorn main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
-        sleep 15  # Wait for startup
+        sleep 15                         # Give server time to start and log TEST_MODE
+
+    - name: Show server startup log (for debugging)
+      run: |
+        cat api-server/server.log || true
 
     - name: Run tests
       env:
-        TEST_MODE: 1
+        TEST_MODE: 1                     # Also set here for safety
       run: |
         cd api-server
         pytest -v

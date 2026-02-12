@@ -10,6 +10,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - uses: actions/checkout@v4
 
@@ -26,10 +41,16 @@ jobs:
     - name: Start FastAPI server
       run: |
         cd api-server
-        nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
-        sleep 5  # Give server time to start
+        nohup uvicorn main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
+        sleep 15  # Wait for startup
 
     - name: Run tests
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: test_db
+        DB_USER: postgres
+        DB_PASSWORD: postgres
       run: |
         cd api-server
         pytest -v

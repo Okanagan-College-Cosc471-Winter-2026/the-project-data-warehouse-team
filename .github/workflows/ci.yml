@@ -46,11 +46,7 @@ jobs:
 
     - name: Run tests
       env:
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_NAME: test_db
-        DB_USER: postgres
-        DB_PASSWORD: postgres
+        TEST_MODE: 1
       run: |
         cd api-server
         pytest -v

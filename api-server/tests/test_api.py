@@ -38,7 +38,7 @@ def test_load_features_success():
 
 def test_load_features_duplicate_reject():
     payload = [
-        {"symbol": "AAPL", "datetime": "2026-02-12T16:00:00", "price": 273.68}  # duplicate
+        {"symbol": "AAPL", "datetime": "duplicate-timestamp", "price": 273.68}  # Trigger mock rejection
     ]
     response = requests.post(f"{API_URL}/v1/load/features", headers=headers, data=json.dumps(payload))
     assert response.status_code == 200

@@ -1,0 +1,26 @@
+# Python virtual environment
+venv/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Logs and temporary files
+*.log
+simulate.log
+
+# Environment file (never commit this)
+.env
+
+# Editor swap files
+*.swp
+*.swo
+*.swx
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Optional: ignore large data files or backups
+*.bak
+*.tmp

@@ -477,7 +477,13 @@ async def extract_features(
                 "records": mock_records,
                 "count": len(mock_records),
                 "limit": limit,
-                "offset": offset
+                "offset": offset,
+                "filters": {
+                    "symbols": symbols,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "fields": fields
+                }
             }
     
     # Execute query

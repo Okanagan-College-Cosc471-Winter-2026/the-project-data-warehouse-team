@@ -1,25 +1,35 @@
 # Python virtual environment
 venv/
-*.pyc
 __pycache__/
 *.pyo
+*.pyc
 *.pyd
 
-# Logs and temporary files
-*.log
-simulate.log
-
-# Environment file (never commit this)
+# Environment files with secrets
 .env
+.env.*
+!.env.example  # Allow a template if you add one later
 
-# Editor swap files
+# Logs, temps, and backups
+*.log
+*.zip
+temp-zip/
+simulate.log
+api-server-old/  # Ignore the archived old structure
+dw-api-server-source.zip  # Ignore this zip (or commit if it's intentional documentation)
+api-server/
+
+# System configs (not for Git - back up via pgBackRest or manually)
+*.service
+/etc/
+/var/
+/var/lib/pgbackrest/
+/var/backups/
+
+# Editor temps and swaps
 *.swp
 *.swo
-*.swx
-
-# OS-specific
-.DS_Store
-Thumbs.db
+*.sw~
 
 # Optional: ignore large data files or backups
 *.bak

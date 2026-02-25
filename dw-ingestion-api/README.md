@@ -1,3 +1,4 @@
+```
 ## Market Data Simulation
 
 A systemd timer runs `scripts/simulate_market_data.py` every 15 minutes, sending 4–8 randomized records to the dev endpoint (port 8001).
@@ -205,3 +206,4 @@ Security Notes
 Temporary password letmein for dw_user — must be rotated before production use.
 Services currently bind to 0.0.0.0 — change to 127.0.0.1 if no external access is required.
 Environment files contain credentials — never commit to Git.
+```

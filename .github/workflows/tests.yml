@@ -53,7 +53,7 @@ jobs:
           TEST_DB_NAME: cosc471_test
           TEST_DB_USER: postgres
           TEST_DB_PASSWORD: letmein
-        run: pytest tests/ -v --tb=short
+        run: pytest dw-ingestion-api/tests/ -v --tb=short
 
       - name: Upload test results (always)
         if: always()

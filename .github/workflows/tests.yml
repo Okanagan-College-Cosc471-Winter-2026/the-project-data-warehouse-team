@@ -52,7 +52,7 @@ jobs:
           TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }}
           TEST_DB_NAME: cosc471_test
           TEST_DB_USER: postgres
-          TEST_DB_PASSWORD: letmein
+          TEST_DB_PASSWORD: postgres
         run: pytest dw-ingestion-api/tests/ -v --tb=short
 
       - name: Upload test results (always)

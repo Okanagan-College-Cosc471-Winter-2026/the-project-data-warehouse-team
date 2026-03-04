@@ -22,20 +22,41 @@ def db_conn():
     yield conn
     conn.close()
 
-def test_timestamp_parsing_and_timezone():
+def test_timestamp_parsing_and_timezone(db_conn):
     """Verify ingested timestamps are timezone-aware and correctly parsed."""
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT ts, pg_typeof(ts) AS type
-                FROM staging.market_data_5m
-                ORDER BY created_at DESC
-                LIMIT 1;
-            """)
-            row = cur.fetchone()
-            assert row is not None, "No records in staging table"
-            assert row['type'] == 'timestamp with time zone', "Timestamp not timezone-aware"
-            assert row['ts'].tzinfo is not None, "Timestamp lacks timezone info"
+    test_symbol = "TEST_TZ"
+    test_ts = datetime.fromisoformat("2023-07-03T01:00:00-07:00")  # Explicit timezone
+
+    with db_conn.cursor() as cur:
+        # Insert a known record
+        cur.execute("""
+            INSERT INTO staging.market_data_5m (symbol, ts, open, high, low, close, volume, asset_type, source)
+            VALUES (%s, %s, 100.0, 101.0, 99.0, 100.5, 1000, 'stock', 'test_source')
+            ON CONFLICT DO NOTHING;
+        """, (test_symbol, test_ts))
+        db_conn.commit()
+
+        # Query the most recent record
+        cur.execute("""
+            SELECT ts, pg_typeof(ts) AS type
+            FROM staging.market_data_5m
+            WHERE symbol = %s
+            ORDER BY created_at DESC
+            LIMIT 1;
+        """, (test_symbol,))
+        row = cur.fetchone()
+
+        assert row is not None, "Failed to retrieve inserted test record"
+
+        assert row['type'] == 'timestamp with time zone', \
+            f"Timestamp type is '{row['type']}' instead of 'timestamp with time zone'"
+
+        assert row['ts'].tzinfo is not None, \
+            "Retrieved timestamp lacks timezone information"
+
+        # Optional: clean up the test record
+        cur.execute("DELETE FROM staging.market_data_5m WHERE symbol = %s", (test_symbol,))
+        db_conn.commit()
 
 def test_gap_logging_for_missing_symbols(db_conn):
     """Verify missing_timeslots table captures expected gaps."""

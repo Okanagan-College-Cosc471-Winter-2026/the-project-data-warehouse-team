@@ -41,10 +41,42 @@ jobs:
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
-          pip install pytest psycopg2-binary  # Ensure core deps are present
+          pip install pytest psycopg2-binary
 
       - name: Wait for PostgreSQL to be ready
-        run: sleep 10 
+        run: sleep 10
+
+      - name: Initialize test database schema
+        run: |
+          psql -h localhost -U postgres -d cosc471_test <<'EOF'
+          CREATE SCHEMA IF NOT EXISTS staging;
+
+          CREATE TABLE IF NOT EXISTS staging.market_data_5m (
+              symbol VARCHAR NOT NULL,
+              ts TIMESTAMPTZ NOT NULL,
+              open NUMERIC,
+              high NUMERIC,
+              low NUMERIC,
+              close NUMERIC,
+              volume BIGINT,
+              asset_type VARCHAR,
+              source VARCHAR,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (symbol, ts)
+          );
+
+          CREATE TABLE IF NOT EXISTS staging.missing_timeslots (
+              timeslot TIMESTAMPTZ NOT NULL,
+              symbol TEXT NOT NULL,
+              detected_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              simulation_run TEXT,
+              PRIMARY KEY (timeslot, symbol)
+          );
+
+          -- Optional: Add other tables if necessary
+          EOF
+        env:
+          PGPASSWORD: postgres
 
       - name: Run pytest
         env:
@@ -62,5 +94,4 @@ jobs:
           name: pytest-results
           path: |
             junit/*.xml
-            coverage.xml   
           retention-days: 7

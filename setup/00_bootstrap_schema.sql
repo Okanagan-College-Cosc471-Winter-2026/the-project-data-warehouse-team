@@ -5,6 +5,32 @@ CREATE SCHEMA IF NOT EXISTS dw;
 
 DROP TABLE IF EXISTS dw.market_data_15m CASCADE;
 
+-- setup/03_bootstrap_source_schema.sql
+CREATE SCHEMA IF NOT EXISTS historical;
+
+DROP TABLE IF EXISTS historical.market_data_5m CASCADE;
+
+CREATE SCHEMA IF NOT EXISTS test;
+
+DROP TABLE IF EXISTS test.market_data_5m CASCADE;
+
+CREATE TABLE test.market_data_5m (LIKE historical.market_data_5m INCLUDING ALL);
+
+CREATE TABLE historical.market_data_5m (
+    market_data_id  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    symbol          text                     NOT NULL,
+    ts              timestamptz              NOT NULL,
+    open            numeric(18,6)            NOT NULL,
+    high            numeric(18,6)            NOT NULL,
+    low             numeric(18,6)            NOT NULL,
+    close           numeric(18,6)            NOT NULL,
+    volume          bigint                   NOT NULL,
+    asset_type      text                     NOT NULL,
+    source          text                     NOT NULL,
+    created_at      timestamptz              NOT NULL DEFAULT now(),
+    UNIQUE (symbol, ts)
+);
+
 CREATE TABLE dw.market_data_15m (
     agg_id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     symbol                  text                     NOT NULL,

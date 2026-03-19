@@ -1,0 +1,62 @@
+name: SQL Integration Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cosc471_test
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done
+
+      - name: Setup database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -c "CREATE DATABASE cosc471_test;" || true
+
+      - name: Bootstrap schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d cosc471_test -f 00_bootstrap_schema.sql
+
+      - name: Reset warehouse & create procedure
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d cosc471_test -f 01_reset_warehouse.sql
+          psql -h localhost -U postgres -d cosc471_test -f 02_create_procedure.sql
+
+      - name: Run SQL integration tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          cd dw-ingestion-api/tests/sql_unit_tests
+          for file in *.sql; do
+            echo "::group::$(basename "$file")"
+            psql -h localhost -U postgres -d cosc471_test -f "$file" || exit 1
+            echo "::endgroup::"
+          done

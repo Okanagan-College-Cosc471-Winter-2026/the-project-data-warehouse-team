@@ -2,7 +2,7 @@ name: SQL Integration Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
 
@@ -22,15 +22,22 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Wait for PostgreSQL
-        run: until pg_isready -h localhost -p 5432 -U postgres; do sleep 2; done
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
 
-      - name: Setup database
+      - name: Create test database (idempotent)
         env:
           PGPASSWORD: postgres
         run: |
@@ -40,16 +47,16 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d cosc471_test -f 00_bootstrap_schema.sql
+          psql -h localhost -U postgres -d cosc471_test -f setup/00_bootstrap_schema.sql
 
-      - name: Reset warehouse & create procedure
+      - name: Reset warehouse and create procedure
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d cosc471_test -f 01_reset_warehouse.sql
-          psql -h localhost -U postgres -d cosc471_test -f 02_create_procedure.sql
+          psql -h localhost -U postgres -d cosc471_test -f setup/01_reset_warehouse.sql
+          psql -h localhost -U postgres -d cosc471_test -f setup/02_create_procedure.sql
 
-      - name: Run SQL integration tests
+      - name: Run all SQL integration tests
         env:
           PGPASSWORD: postgres
         run: |

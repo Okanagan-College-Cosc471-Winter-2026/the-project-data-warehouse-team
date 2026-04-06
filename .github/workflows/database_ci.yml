@@ -1,0 +1,63 @@
+name: Data Pipeline CI
+
+# Run this workflow every time code is pushed to the main branch 
+# or a Pull Request is opened.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-database:
+    runs-on: ubuntu-latest
+
+    # This tells GitHub to spin up a blank PostgreSQL database in the background
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: penguin
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: penguin_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # STEP A: Bootstrapping the Schema
+      - name: Build Database Schema & Procedures
+        # Tells the runner to jump into your test suite folder first
+        working-directory: dw-ingestion-api/tests/test_suite
+        env:
+          PGPASSWORD: ci_password
+        run: |
+          # First, we load the table blueprints
+          psql -h localhost -U penguin -d penguin_db -f schema_dump.sql
+          
+          # Second, we load your master procedure
+          psql -h localhost -U penguin -d penguin_db -f dw_build_warehouse_data.sql
+
+      # STEP B: Running the Test Suite
+      - name: Run Layer 1 & 2 Tests
+        # Tells the runner to jump into your test suite folder first
+        working-directory: dw-ingestion-api/tests/test_suite
+        env:
+          PGPASSWORD: ci_password
+        run: |
+          # If any of these scripts throw an EXCEPTION, the CI pipeline fails and turns red
+          psql -h localhost -U penguin -d penguin_db -f test_1_idempotency.sql
+          psql -h localhost -U penguin -d penguin_db -f test_2_ohlc.sql
+          psql -h localhost -U penguin -d penguin_db -f test_3_gaps.sql
+          psql -h localhost -U penguin -d penguin_db -f test_7_rolling_math.sql
+          psql -h localhost -U penguin -d penguin_db -f test_8_divide_by_zero.sql
+          psql -h localhost -U penguin -d penguin_db -f test_10_ml_warmup.sql
+          psql -h localhost -U penguin -d penguin_db -f test_4_empty_staging.sql
+          psql -h localhost -U penguin -d penguin_db -f test_5_gatekeeper_trigger.sql
